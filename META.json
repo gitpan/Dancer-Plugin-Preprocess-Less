@@ -46,6 +46,7 @@
             "Dancer" : "0",
             "Dancer::Plugin" : "0",
             "File::Spec::Functions" : "0",
+            "IPC::Open3" : "0",
             "perl" : "5.006",
             "strict" : "0",
             "warnings" : "0"
@@ -72,7 +73,7 @@
    "provides" : {
       "Dancer::Plugin::Preprocess::Less" : {
          "file" : "lib/Dancer/Plugin/Preprocess/Less.pm",
-         "version" : "0.010"
+         "version" : "0.020"
       }
    },
    "release_status" : "stable",
@@ -87,6 +88,6 @@
          "web" : "https://github.com/odyniec/p5-Dancer-Plugin-Preprocess-Less"
       }
    },
-   "version" : "0.010"
+   "version" : "0.020"
 }
 

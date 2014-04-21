@@ -25,6 +25,7 @@ my %WriteMakefileArgs = (
     "Dancer" => 0,
     "Dancer::Plugin" => 0,
     "File::Spec::Functions" => 0,
+    "IPC::Open3" => 0,
     "strict" => 0,
     "warnings" => 0
   },
@@ -39,7 +40,7 @@ my %WriteMakefileArgs = (
     "List::Util" => 0,
     "Test::More" => 0
   },
-  "VERSION" => "0.010",
+  "VERSION" => "0.020",
   "test" => {
     "TESTS" => "t/*.t t/paths/*.t"
   }

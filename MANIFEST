@@ -9,6 +9,7 @@ dist.ini
 lib/Dancer/Plugin/Preprocess/Less.pm
 t/00-compile.t
 t/00-report-prereqs.t
+t/parser-missing.t
 t/paths/app/public/css/bar.less
 t/paths/app/public/css/sub/bar.css
 t/paths/app/public/css/sub/bar.less

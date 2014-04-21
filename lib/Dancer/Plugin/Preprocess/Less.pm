@@ -5,13 +5,13 @@ use warnings;
 
 # ABSTRACT: Generate CSS files from .less files
 
-our $VERSION = '0.010'; # VERSION
+our $VERSION = '0.020'; # VERSION
 
-use CSS::LESSp;
 use Cwd 'abs_path';
 use Dancer ':syntax';
 use Dancer::Plugin;
 use File::Spec::Functions qw(catfile);
+use IPC::Open3 qw(open3);
 
 my $settings = plugin_setting;
 my $paths;
@@ -27,6 +27,21 @@ else {
 
 # Translate URL paths to filesystem paths
 my @fs_paths = map { catfile(split('/'), "") } @$paths;
+
+my $process_file;
+
+if (`lessc -v`) {
+    $process_file = \&_process_with_lessc;
+}
+elsif (eval { require CSS::LESSp }) {
+    $process_file = \&_process_with_CSS_LESSp;
+}
+else {
+    error __PACKAGE__ .
+        ": lessc binary or CSS::LESSp is required but neither was found";
+    # This is a fatal error
+    return false;
+}
 
 if ($settings->{save}) {
     # Check if the directories are writable
@@ -46,7 +61,19 @@ my $paths_re = join '|', map {
     quotemeta $s;
 } reverse sort @$paths;
 
-sub _process_less_file {
+sub _process_with_lessc {
+    my $less_file = shift;
+    
+    my $pid = open3(my $chld_in, my $chld_out, my $chld_err, 'lessc',
+        $less_file);
+    
+    my $css = join '', <$chld_out>;
+    waitpid $pid, 0;
+
+    return $css;
+}
+
+sub _process_with_CSS_LESSp {
     my $less_file = shift;
     
     open (my $f, '<', $less_file);
@@ -78,7 +105,7 @@ hook before_file_render => sub {
 
         if (-f $input_file && (stat($path))[9] < (stat($input_file))[9]) {
             # There is a Less file newer than the CSS file
-            my $css = _process_less_file($input_file);
+            my $css = $process_file->($input_file);
             
             if (defined $css) {
                 # Save the generated CSS data
@@ -104,8 +131,8 @@ get qr{($paths_re)/([^/]*\.css)} => sub {
 
     if (-f $input_file) {
         # Less file exists
-        my $css = _process_less_file($input_file);
-        
+        my $css = $process_file->($input_file);
+
         if ($settings->{save}) {
             # Saving enabled -- save the generated CSS as the requested file
             open(my $f, '>', $css_file_abs);
@@ -147,7 +174,7 @@ Dancer::Plugin::Preprocess::Less - Generate CSS files from .less files
 
 =head1 VERSION
 
-version 0.010
+version 0.020
 
 =head1 SYNOPSIS
 
@@ -166,6 +193,45 @@ Configure its settings in the YAML configuration file:
         paths:
           - css
           - subdir/css
+
+=head1 DESCRIPTION
+
+Dancer::Plugin::Preprocess::Less adds support for Less files in a Dancer web
+application.
+
+When a request is received for a CSS file, the plugin looks for a Less file with
+the same name, and transforms it into CSS. The generated CSS file may then be
+saved and served as a regular static file. Every time the source Less file gets
+modified, the corresponding CSS file is regenerated.
+
+=head1 CONFIGURATION
+
+The available configuration settings are described below.
+
+=head2 save
+
+If set to C<0>, then the CSS files are generated on-the-fly with every request.
+If set to C<1>, the files are generated once and saved, then served as static
+files later on.
+
+CSS files are saved in the same directory as the Less files, so the system user
+that the web application is running as must be allowed to write to that
+directory.
+
+Default: C<0>
+
+=head2 paths
+
+A list of paths to serve CSS files from. Each path is relative to the C<public>
+directory of the application.
+
+    plugins:
+      "Preprocess::Less":
+        paths:
+          - css
+          - subdir/css
+
+Default: C<'css'>
 
 =head1 SEE ALSO
 
